@@ -1,4 +1,4 @@
-#include "SimpleCache.h"
+#include "L1Cache.h"
 
 uint8_t L1Cache[L1_SIZE];
 uint8_t L2Cache[L2_SIZE];
@@ -51,7 +51,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   MemAddress = MemAddress << 3; // address of the block in memory
 
   /* access Cache*/
-
+ 
   if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
 
