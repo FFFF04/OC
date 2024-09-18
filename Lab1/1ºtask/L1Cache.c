@@ -30,72 +30,70 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
 /*********************** L1 cache *************************/
 
-void initCache() {
-  
-  SimpleCache.init = 0; 
-  for (int i = 0; i < L1_SIZE/BLOCK_SIZE; i++)
-  { 
-    SimpleCache.line[i].Dirty = 0;
-    SimpleCache.line[i].Tag = 0;
-    SimpleCache.line[i].Valid = 0;
-  }
-  
-  for (int i = 0; i < DRAM_SIZE; i++)
-    DRAM[i] = 0;
-  
-
-}
+void initCache() {SimpleCache.init = 0;}
 
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
+    uint32_t index, Tag, MemAddress, Offset;
+    uint8_t TempBlock[BLOCK_SIZE];
 
-  uint32_t index, Tag, MemAddress, Offset;
-  uint8_t TempBlock[BLOCK_SIZE];
-
-  // /* init cache */
-  // if (SimpleCache.init == 0) {
-  //   SimpleCache.line.Valid = 0;
-  //   SimpleCache.init = 1;
-  // }
-
-  CacheLine *Line = &SimpleCache.line;
-
-  // Tag = address >> 3; // Why do I do this?
-
-  // MemAddress = address >> 3; // again this....!
-  // MemAddress = MemAddress << 3; // address of the block in memory
-
-  /* access Cache*/
-  Offset = address & 0x3F;
-  index = (address >> 6) & 0xFF;
-  Tag = address >> 14;
-
-  
-  if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
-    // MemAddress = ??????
-    MemAddress = 0;
-    accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
-
-    if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
-      MemAddress = Line->Tag << 3;        // get address of the block in memory
-      accessDRAM(MemAddress, &(L1Cache[index]), MODE_WRITE); // then write back old block
+    /* Init cache */
+    if (SimpleCache.init == 0) {
+        for (int i = 0; i < NUM_LINES_L1; i++) {
+            SimpleCache.lines[i].Valid = 0;
+            SimpleCache.lines[i].Dirty = 0;
+            SimpleCache.lines[i].Tag = 0;
+        }
+        SimpleCache.init = 1;
     }
-    memcpy(&(L1Cache[index]), TempBlock, BLOCK_SIZE); // copy new block to cache line
-    Line->Valid = 1;
-    Line->Tag = Tag;
-    Line->Dirty = 0;
-  } // if miss, then replaced with the correct block
+    /* Calcula o índice e a tag */
 
+    Offset = address & 0x3F;
+    index = (address >> 6) & 0xFF;
+    Tag = address >> 14;
 
-  if (mode == MODE_READ) {    // read data from cache line
-    memcpy(data, &(L1Cache[index]), WORD_SIZE);
-    time += L1_READ_TIME;
-  }
+    // Address - offset porque queremos ir para o inicio do bloco
+    MemAddress = address - Offset;
 
-  if (mode == MODE_WRITE) {   // write data from cache line
-    memcpy(&(L1Cache[index]), data, WORD_SIZE);
-    time += L1_WRITE_TIME;
-    Line->Dirty = 1;
-  }
+    CacheLine *Line = &SimpleCache.lines[index];
+
+    /* Acesso à Cache */
+    if (!Line->Valid || Line->Tag != Tag) { // Cache miss
+        // Busca o bloco na DRAM
+        accessDRAM(MemAddress, TempBlock, MODE_READ);
+        
+        // Se a linha estiver suja, escreve o bloco antigo de volta na DRAM
+        if (Line->Valid && Line->Dirty) {
+            // uint32_t oldMemAddress = (Line->Tag << (3 + 4)); // Alinha o endereço do bloco antigo
+            accessDRAM(MemAddress, Line->Data, MODE_WRITE);
+        }
+
+        // Substitui o bloco na linha de cache
+        memcpy(Line->Data, TempBlock, BLOCK_SIZE);
+        Line->Valid = 1;
+        Line->Tag = Tag;
+        Line->Dirty = 0; // Novo bloco não é sujo inicialmente
+    }
+
+    /* Leitura de dados */
+    if (mode == MODE_READ) {
+        if (address % 8 == 0) { // Palavra par
+            memcpy(data, &(Line->Data[Offset]), WORD_SIZE);
+        } else { // Palavra ímpar
+            memcpy(data, &(Line->Data[Offset]), WORD_SIZE);
+        }
+        time += L1_READ_TIME;
+    }
+
+    /* Escrita de dados */
+    if (mode == MODE_WRITE) {
+        if (address % 8 == 0) { // Palavra par
+            memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
+        } else { // Palavra ímpar
+            memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
+        }
+        time += L1_WRITE_TIME;
+        Line->Dirty = 1; // Marca a linha como suja
+    }
 }
 
 void read(uint32_t address, uint8_t *data) {
