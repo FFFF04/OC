@@ -62,10 +62,8 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
         accessDRAM(MemAddress, TempBlock, MODE_READ);
         
         // Se a linha estiver suja, escreve o bloco antigo de volta na DRAM
-        if (Line->Valid && Line->Dirty) {
-            // uint32_t oldMemAddress = (Line->Tag << (3 + 4)); // Alinha o endereço do bloco antigo
+        if (Line->Valid && Line->Dirty)
             accessDRAM(MemAddress, Line->Data, MODE_WRITE);
-        }
 
         // Substitui o bloco na linha de cache
         memcpy(Line->Data, TempBlock, BLOCK_SIZE);
@@ -76,21 +74,15 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
     /* Leitura de dados */
     if (mode == MODE_READ) {
-        if (address % 8 == 0) { // Palavra par
-            memcpy(data, &(Line->Data[Offset]), WORD_SIZE);
-        } else { // Palavra ímpar
-            memcpy(data, &(Line->Data[Offset]), WORD_SIZE);
-        }
+
+        memcpy(data, &(Line->Data[Offset]), WORD_SIZE);
         time += L1_READ_TIME;
     }
 
     /* Escrita de dados */
     if (mode == MODE_WRITE) {
-        if (address % 8 == 0) { // Palavra par
-            memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
-        } else { // Palavra ímpar
-            memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
-        }
+
+        memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
         time += L1_WRITE_TIME;
         Line->Dirty = 1; // Marca a linha como suja
     }
