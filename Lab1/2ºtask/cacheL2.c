@@ -9,13 +9,13 @@ CacheL2 SimpleCacheL2;  // Cache L2
 
 /*********************** Funções Auxiliares *************************/
 
-// Inicializa a cache L1
-void initCacheL1() {
-    SimpleCacheL1.init = 0;
-}
+void resetTime() { time = 0; }
 
-// Inicializa a cache L2
-void initCacheL2() {
+uint32_t getTime() { return time; }
+
+// Inicializa both caches
+void initCache() {
+    SimpleCacheL1.init = 0;
     SimpleCacheL2.init = 0;
 }
 
@@ -35,106 +35,119 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
 /*********************** Funções da Cache *************************/
 
+void write_L1(uint32_t address, uint8_t *data){
+    uint32_t index, Tag, Offset;
+
+    /* Calcula o índice e a tag e offset*/
+    Offset = address & 0x3F;
+    index = (address >> 6) & 0xFF;
+    Tag = address >> 14;
+
+    CacheLine *Line = &SimpleCacheL1.lines[index];
+
+    memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
+    time += L1_WRITE_TIME;
+
+    Line->Valid = 1;
+    Line->Tag = Tag;
+    Line->Dirty = 1; // Marca a linha como suja
+}
+
 // Acesso à cache L1
 int accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
-    uint32_t Tag, Index, MemAddress;
-    uint8_t TempBlock[BLOCK_SIZE];
+    uint32_t index, Tag, Offset;
+    // uint8_t TempBlock[BLOCK_SIZE];
 
+    /* Init cache */
     if (SimpleCacheL1.init == 0) {
-        for (int i = 0; i < L1_LINES; i++) {
+        for (int i = 0; i < NUM_LINES_L1; i++) {
             SimpleCacheL1.lines[i].Valid = 0;
+            SimpleCacheL1.lines[i].Dirty = 0;
+            SimpleCacheL1.lines[i].Tag = 0;
         }
         SimpleCacheL1.init = 1;
     }
+    /* Calcula o índice e a tag e offset*/
+    Offset = address & 0x3F;
+    index = (address >> 6) & 0xFF;
+    Tag = address >> 14;
 
-    /** 
-    #TODO
-    Tag = address >> 3;             // como obter a tag?
-    Index = address << 3;           // Como obter o indice?
-    */
+    // Address - offset porque queremos ir para o inicio do bloco
+    // MemAddress = address - Offset;
 
-    CacheLine *Line = &SimpleCacheL1.lines[Index];
+    CacheLine *Line = &SimpleCacheL1.lines[index];
 
-    MemAddress = (address >> 3) << 3;  // Alinha o endereço do bloco
+    /* Acesso à Cache */
+    if (!Line->Valid || Line->Tag != Tag)  // Cache miss
+        return 0;
 
-    // Cache Miss: se a linha não for válida ou o Tag não coincidir
-    if (!Line->Valid || Line->Tag != Tag) {
-        return 0;  // Indica miss na L1
-    }
-
-    // Leitura
+    /* Leitura de dados */
     if (mode == MODE_READ) {
-        if ((address % 8) == 0) {  // Palavra par
-            memcpy(data, &(Line->Data[0]), WORD_SIZE);
-        } else {                   // Palavra ímpar
-            memcpy(data, &(Line->Data[WORD_SIZE]), WORD_SIZE);
-        }
+
+        memcpy(data, &(Line->Data[Offset]), WORD_SIZE);
         time += L1_READ_TIME;
     }
-
-    // Escrita
+    /* Escrita de dados */
     if (mode == MODE_WRITE) {
-        if ((address % 8) == 0) {  // Palavra par
-            memcpy(&(Line->Data[0]), data, WORD_SIZE);
-        } else {                   // Palavra ímpar
-            memcpy(&(Line->Data[WORD_SIZE]), data, WORD_SIZE);
-        }
-        Line->Dirty = 1;
-        time += L1_WRITE_TIME;
+        write_L1(address, data);
+        write_L2;
     }
-
-    return 1;  // Indica hit na L1
+    return 1;
 }
 
 // Acesso à cache L2
 int accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
-    uint32_t Tag, Index, MemAddress;
+    uint32_t index, Tag, MemAddress, Offset;
     uint8_t TempBlock[BLOCK_SIZE];
 
+    /* Init cache */
     if (SimpleCacheL2.init == 0) {
-        for (int i = 0; i < L2_LINES; i++) {
+        for (int i = 0; i < NUM_LINES_L2; i++) {
             SimpleCacheL2.lines[i].Valid = 0;
+            SimpleCacheL2.lines[i].Dirty = 0;
+            SimpleCacheL2.lines[i].Tag = 0;
         }
         SimpleCacheL2.init = 1;
     }
+    /* Calcula o índice e a tag e offset*/
+    Offset = address & 0x3F;
+    index = (address >> 6) & 0x1FF;
+    Tag = address >> 15;
 
-    /** 
-    #TODO
-    Tag = address >> 3;             // como obter a tag?
-    Index = address << 3;  // Como obter o indice?
-    */
-    CacheLine *Line = &SimpleCacheL2.lines[Index];
+    // Address - offset porque queremos ir para o inicio do bloco
+    MemAddress = address - Offset;
 
-    MemAddress = (address >> 3) << 3;  // Alinha o endereço do bloco
+    CacheLine *Line = &SimpleCacheL2.lines[index];
 
     // Cache Miss: se a linha não for válida ou o Tag não coincidir
     if (!Line->Valid || Line->Tag != Tag) {
         // Carrega o bloco da DRAM
         accessDRAM(MemAddress, TempBlock, MODE_READ);
+        
+        // Se a linha estiver suja, escreve o bloco antigo de volta na DRAM
+        if (Line->Valid && Line->Dirty) {
+            accessDRAM(MemAddress, Line->Data, MODE_WRITE);
+        }
+
+        // Substitui o bloco na linha de cache
         memcpy(Line->Data, TempBlock, BLOCK_SIZE);
         Line->Valid = 1;
         Line->Tag = Tag;
-        Line->Dirty = 0;
-        return 0;  // Indica miss na L2
+        Line->Dirty = 0; // Novo bloco não é sujo inicialmente
+        // return 0;  // Indica miss na L2
     }
 
     // Leitura
     if (mode == MODE_READ) {
-        if ((address % 8) == 0) {  // Palavra par
-            memcpy(data, &(Line->Data[0]), WORD_SIZE);
-        } else {                   // Palavra ímpar
-            memcpy(data, &(Line->Data[WORD_SIZE]), WORD_SIZE);
-        }
+
+        memcpy(data, &(Line->Data[Offset]), WORD_SIZE);
         time += L2_READ_TIME;
     }
 
     // Escrita
     if (mode == MODE_WRITE) {
-        if ((address % 8) == 0) {  // Palavra par
-            memcpy(&(Line->Data[0]), data, WORD_SIZE);
-        } else {                   // Palavra ímpar
-            memcpy(&(Line->Data[WORD_SIZE]), data, WORD_SIZE);
-        }
+
+        memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
         Line->Dirty = 1;
         time += L2_WRITE_TIME;
     }
@@ -149,10 +162,10 @@ void read(uint32_t address, uint8_t *data) {
         // Se ocorrer um miss na L1, acessar L2
         if (!accessL2(address, data, MODE_READ)) {
             // Se ocorrer um miss na L2, carregar da DRAM
-            accessDRAM(address, data, MODE_READ); //TODO PODE SER QUE SE TENHA Q REMOVER ISTO PQ A NO ACESSO À CACHE 2 JA ACESSAMOS A DRAM
+            // accessDRAM(address, data, MODE_READ); //TODO PODE SER QUE SE TENHA Q REMOVER ISTO PQ A NO ACESSO À CACHE 2 JA ACESSAMOS A DRAM
         }
         // Colocar o bloco da L2 para a L1 (write-back)
-        accessL1(address, data, MODE_WRITE);
+        write_L1(address, data);
     }
 }
 
@@ -162,9 +175,9 @@ void write(uint32_t address, uint8_t *data) {
         // Se ocorrer um miss na L1, acessar L2
         if (!accessL2(address, data, MODE_WRITE)) {
             // Se ocorrer um miss na L2, carregar da DRAM
-            accessDRAM(address, data, MODE_READ);
+            // accessDRAM(address, data, MODE_READ);
         }
         // Colocar o bloco da L2 para a L1 (write-back)
-        accessL1(address, data, MODE_WRITE);
+        write_L1(address, data);
     }
 }
