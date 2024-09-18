@@ -1,4 +1,4 @@
-#include "cacheL2.h"
+#include "L3Cache.h"
 
 
 uint8_t DRAM[DRAM_SIZE];
