@@ -21,9 +21,8 @@ void accessDRAM(uint32_t, uint8_t *, uint32_t);
 /*********************** Cache *************************/
 
 void initCache();
-void write_L1(uint32_t, uint8_t *);
-int accessL1(uint32_t, uint8_t *, uint32_t);
-int accessL2(uint32_t, uint8_t *,uint32_t );
+void accessL1(uint32_t, uint8_t *, uint32_t);
+void accessL2(uint32_t, uint8_t *,uint32_t );
 
 // Estrutura da linha da cache
 typedef struct CacheLine {

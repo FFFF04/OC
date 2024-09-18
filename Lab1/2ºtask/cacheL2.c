@@ -35,28 +35,11 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
 /*********************** Funções da Cache *************************/
 
-void write_L1(uint32_t address, uint8_t *data){
-    uint32_t index, Tag, Offset;
-
-    /* Calcula o índice e a tag e offset*/
-    Offset = address & 0x3F;
-    index = (address >> 6) & 0xFF;
-    Tag = address >> 14;
-
-    CacheLine *Line = &SimpleCacheL1.lines[index];
-
-    memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
-    time += L1_WRITE_TIME;
-
-    Line->Valid = 1;
-    Line->Tag = Tag;
-    Line->Dirty = 1; // Marca a linha como suja
-}
 
 // Acesso à cache L1
-int accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
-    uint32_t index, Tag, Offset;
-    // uint8_t TempBlock[BLOCK_SIZE];
+void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
+    uint32_t index, Tag, Offset,MemAddress;
+    uint8_t TempBlock[BLOCK_SIZE];
 
     /* Init cache */
     if (SimpleCacheL1.init == 0) {
@@ -73,14 +56,28 @@ int accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Tag = address >> 14;
 
     // Address - offset porque queremos ir para o inicio do bloco
-    // MemAddress = address - Offset;
+    MemAddress = address - Offset;
 
     CacheLine *Line = &SimpleCacheL1.lines[index];
 
     /* Acesso à Cache */
-    if (!Line->Valid || Line->Tag != Tag)  // Cache miss
-        return 0;
+    // Cache miss
+    if (!Line->Valid || Line->Tag != Tag){
+        // Carrega o bloco da DRAM
+        accessL2(MemAddress,TempBlock,MODE_READ);
+        
+        // Se a linha estiver suja, escreve o bloco antigo de volta na DRAM
+        if (Line->Valid && Line->Dirty) {
+            accessL2(MemAddress, Line->Data, MODE_WRITE);
+        }
 
+        // Substitui o bloco na linha de cache
+        memcpy(Line->Data, TempBlock, BLOCK_SIZE);
+        Line->Valid = 1;
+        Line->Tag = Tag;
+        Line->Dirty = 0; // Novo bloco não é sujo inicialmente
+    }  
+        
     /* Leitura de dados */
     if (mode == MODE_READ) {
 
@@ -89,14 +86,15 @@ int accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     }
     /* Escrita de dados */
     if (mode == MODE_WRITE) {
-        write_L1(address, data);
-        write_L2;
+        memcpy(&(Line->Data[Offset]), data, WORD_SIZE);
+        time += L1_WRITE_TIME;
+
+        Line->Dirty = 1; // Marca a linha como suja
     }
-    return 1;
 }
 
 // Acesso à cache L2
-int accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
+void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     uint32_t index, Tag, MemAddress, Offset;
     uint8_t TempBlock[BLOCK_SIZE];
 
@@ -111,8 +109,8 @@ int accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     }
     /* Calcula o índice e a tag e offset*/
     Offset = address & 0x3F;
-    index = (address >> 6) & 0x1FF;
-    Tag = address >> 15;
+    index = (address >> 6) & 0xFF;
+    Tag = address >> 14;
 
     // Address - offset porque queremos ir para o inicio do bloco
     MemAddress = address - Offset;
@@ -134,7 +132,6 @@ int accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
         Line->Valid = 1;
         Line->Tag = Tag;
         Line->Dirty = 0; // Novo bloco não é sujo inicialmente
-        // return 0;  // Indica miss na L2
     }
 
     // Leitura
@@ -152,32 +149,16 @@ int accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
         time += L2_WRITE_TIME;
     }
 
-    return 1;  // Indica hit na L2
+     // Indica hit na L2
 }
 
 // Função principal para ler e escrever, considerando a hierarquia de cache L1 e L2
 void read(uint32_t address, uint8_t *data) {
     // Acessar L1
-    if (!accessL1(address, data, MODE_READ)) {
-        // Se ocorrer um miss na L1, acessar L2
-        if (!accessL2(address, data, MODE_READ)) {
-            // Se ocorrer um miss na L2, carregar da DRAM
-            // accessDRAM(address, data, MODE_READ); //TODO PODE SER QUE SE TENHA Q REMOVER ISTO PQ A NO ACESSO À CACHE 2 JA ACESSAMOS A DRAM
-        }
-        // Colocar o bloco da L2 para a L1 (write-back)
-        write_L1(address, data);
-    }
+    accessL1(address, data, MODE_READ);
 }
 
 void write(uint32_t address, uint8_t *data) {
     // Acessar L1
-    if (!accessL1(address, data, MODE_WRITE)) {
-        // Se ocorrer um miss na L1, acessar L2
-        if (!accessL2(address, data, MODE_WRITE)) {
-            // Se ocorrer um miss na L2, carregar da DRAM
-            // accessDRAM(address, data, MODE_READ);
-        }
-        // Colocar o bloco da L2 para a L1 (write-back)
-        write_L1(address, data);
-    }
+    accessL1(address, data, MODE_WRITE);
 }
