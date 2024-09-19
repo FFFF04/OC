@@ -39,6 +39,7 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 // Acesso à cache L1
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     uint32_t index, Tag, Offset,MemAddress;
+    uint8_t TempBlock[BLOCK_SIZE];
 
     /* Init cache */
     if (SimpleCacheL1.init == 0) {
@@ -63,8 +64,15 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     // Cache miss
     if (!Line->Valid || Line->Tag != Tag){
         // Carrega o bloco da DRAM
-        accessL2(MemAddress,Line->Data,MODE_READ);
+        accessL2(MemAddress,TempBlock,MODE_READ);
+        
+        // Se a linha estiver suja, escreve o bloco antigo de volta na DRAM
+        if (Line->Valid && Line->Dirty) {
+            accessL2(MemAddress, Line->Data, MODE_WRITE);
+        }
 
+        // Substitui o bloco na linha de cache
+        memcpy(Line->Data, TempBlock, BLOCK_SIZE);
         Line->Valid = 1;
         Line->Tag = Tag;
         Line->Dirty = 0; // Novo bloco não é sujo inicialmente
