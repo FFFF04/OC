@@ -112,6 +112,13 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     index = (address >> 6) & 0xFF;
     Tag = address >> 14;
 
+    /*
+    Vamos ter 128 sets.
+    Temos de alterar a estrutura da Cache2
+    Fazemos um ciclo a percurrer os 128 sets para localizar em que Set esta o address
+    A partir dai tiramos a linha 
+    */
+
     // Address - offset porque queremos ir para o inicio do bloco
     MemAddress = address - Offset;
 
