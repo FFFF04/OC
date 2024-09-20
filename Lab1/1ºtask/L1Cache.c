@@ -42,6 +42,9 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
             SimpleCache.lines[i].Valid = 0;
             SimpleCache.lines[i].Dirty = 0;
             SimpleCache.lines[i].Tag = 0;
+
+            for (int j = 0; j < BLOCK_SIZE; j+=WORD_SIZE)
+              SimpleCache.lines[i].Data[j] = 0;
         }
         SimpleCache.init = 1;
     }
