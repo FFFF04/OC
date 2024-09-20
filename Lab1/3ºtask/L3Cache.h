@@ -38,9 +38,14 @@ typedef struct CacheL1 {
     CacheLine lines[NUM_LINES_L1]; // Cache L1 com 256 linhas
 } CacheL1;
 
+typedef struct dataSet{
+    uint8_t LRU;
+    CacheLine lines[2];
+}dataSet;
+
 typedef struct CacheL2 {
     uint32_t init;
-    CacheLine lines[NUM_LINES_L2]; // Cache L2 com 512 linhas
+    dataSet sets[(NUM_LINES_L2/2)]; // Cache L2 com 256 sets de 2 linhas
 } CacheL2;
 
 /*********************** Interfaces *************************/
