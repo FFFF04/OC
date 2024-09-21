@@ -123,8 +123,8 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     }
     /* Calcula o índice e a tag e offset*/
     Offset = address & 0x3F;
-    index = (address >> 6) & 0xFF;
-    Tag = address >> 14;
+    index = (address >> 6) & 0x1FF;
+    Tag = address >> 15;
 
     /*
     Vamos ter 128 sets.------------------------Tiago: não seriam 256 sets? 256*2 =512. Para manter o mesmo size
@@ -198,8 +198,6 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
         Set->LRU = 0;
     return;
     //Atualiza o LRU para o valor qu não foi atualizado
-
-
 }
 
 // Função principal para ler e escrever, considerando a hierarquia de cache L1 e L2

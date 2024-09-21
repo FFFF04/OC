@@ -115,8 +115,8 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     }
     /* Calcula o índice e a tag e offset*/
     Offset = address & 0x3F;
-    index = (address >> 6) & 0xFF;
-    Tag = address >> 14;
+    index = (address >> 6) & 0x1FF;
+    Tag = address >> 15;
 
     // Address - offset porque queremos ir para o inicio do bloco
     MemAddress = address - Offset;
