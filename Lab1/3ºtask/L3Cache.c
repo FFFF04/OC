@@ -107,11 +107,17 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
             SimpleCacheL2.sets[i].lines[0].Valid = 0;
             SimpleCacheL2.sets[i].lines[0].Dirty = 0;
             SimpleCacheL2.sets[i].lines[0].Tag = 0;
+
             SimpleCacheL2.sets[i].lines[1].Valid = 0;
             SimpleCacheL2.sets[i].lines[1].Dirty = 0;
             SimpleCacheL2.sets[i].lines[1].Tag = 0;
-            SimpleCacheL2.sets[i].LRU=0;
 
+            SimpleCacheL2.sets[i].LRU = 0;
+
+            for (int k = 0; k < BLOCK_SIZE; k+=WORD_SIZE){
+                SimpleCacheL2.sets[i].lines[0].Data[k] = 0;
+                SimpleCacheL2.sets[i].lines[1].Data[k] = 0;
+            }
         }
         SimpleCacheL2.init = 1;
     }
@@ -133,7 +139,8 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     dataSet *Set = &SimpleCacheL2.sets[index];
 
     //Verificar cache hit no set
-    for(int i=0;i<2;i++){
+    for(int i = 0; i < 2; i++){
+        
         if(Set->lines[i].Valid && Set->lines[i].Tag==Tag){
             // Leitura
             if (mode == MODE_READ) {
@@ -141,7 +148,6 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
                 memcpy(data, &(Set->lines[i].Data[Offset]), WORD_SIZE);
                 time += L2_READ_TIME;
             }
-
             // Escrita
             if (mode == MODE_WRITE) {
 
@@ -150,15 +156,13 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
                 time += L2_WRITE_TIME;
             }
             //Atualiza o LRU para o valor qu não foi "hit"
-            if(i==0)
-                Set->LRU=1;
+            if(i == 0)
+                Set->LRU = 1;
             else
-                Set->LRU=0;
+                Set->LRU = 0;
             return;
         }
-    }
-
-
+    }   
 
     // Cache Miss: se a linha não for válida ou o Tag não coincidir
     // Carrega o bloco da DRAM
@@ -188,10 +192,10 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
         Set->lines[Set->LRU].Dirty = 1;
         time += L2_WRITE_TIME;
     }
-    if(Set->LRU==0)
-        Set->LRU=1;
+    if(Set->LRU == 0)
+        Set->LRU = 1;
     else
-        Set->LRU=0;
+        Set->LRU = 0;
     return;
     //Atualiza o LRU para o valor qu não foi atualizado
 
