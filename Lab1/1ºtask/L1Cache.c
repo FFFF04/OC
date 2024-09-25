@@ -1,7 +1,5 @@
 #include "L1Cache.h"
 
-uint8_t L1Cache[L1_SIZE];
-uint8_t L2Cache[L2_SIZE];
 uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
 Cache SimpleCache;
