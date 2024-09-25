@@ -126,13 +126,6 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     index = (address >> 6) & 0xFF;
     Tag = address >> 14;
 
-    /*
-    Vamos ter 128 sets.------------------------Tiago: não seriam 256 sets? 256*2 =512. Para manter o mesmo size
-    Temos de alterar a estrutura da Cache2
-    Fazemos um ciclo a percurrer os 128 sets para localizar em que Set esta o address
-    A partir dai tiramos a linha 
-    */
-
     // Address - offset porque queremos ir para o inicio do bloco
     MemAddress = address - Offset;
 
@@ -155,7 +148,7 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
                 Set->lines[i].Dirty = 1;
                 time += L2_WRITE_TIME;
             }
-            //Atualiza o LRU para o valor qu não foi "hit"
+            //Atualiza o LRU para o valor que não foi "hit"
             if(i == 0)
                 Set->LRU = 1;
             else
@@ -178,6 +171,7 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     Set->lines[Set->LRU].Valid = 1;
     Set->lines[Set->LRU].Tag = Tag;
     Set->lines[Set->LRU].Dirty = 0; // Novo bloco não é sujo inicialmente
+
     // Leitura
     if (mode == MODE_READ) {
 
@@ -197,7 +191,7 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     else
         Set->LRU = 0;
     return;
-    //Atualiza o LRU para o valor qu não foi atualizado
+    //Atualiza o LRU para o valor que não foi atualizado
 }
 
 // Função principal para ler e escrever, considerando a hierarquia de cache L1 e L2

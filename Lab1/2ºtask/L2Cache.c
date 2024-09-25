@@ -154,8 +154,7 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
         Line->Dirty = 1;
         time += L2_WRITE_TIME;
     }
-
-     // Indica hit na L2
+    // Indica hit na L2
 }
 
 // Função principal para ler e escrever, considerando a hierarquia de cache L1 e L2

@@ -63,12 +63,6 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
         accessDRAM(MemAddress, TempBlock, MODE_READ);
         
         // Se a linha estiver suja, escreve o bloco antigo de volta na DRAM
-        /*Mecanismo de Write Back
-        Quando ocorre um miss e temos de substituir informaçao 
-        na cache so trocamos quando é extremamente necessario.
-        Temos de passar a informaçao que estava na cache para a memoria 
-        para abrir espaço para a nova data. 
-        */
         if (Line->Valid && Line->Dirty)
             accessDRAM(MemAddress, Line->Data, MODE_WRITE);
 
