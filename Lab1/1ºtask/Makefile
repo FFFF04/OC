@@ -14,10 +14,4 @@ run:
 	./$(TARGET) > $(FILE1)
 
 resposta:
-	cmp -s $(FILE1) $(FILE2); \
-	RETVAL=$$?; \
-	if [ $$RETVAL -eq 0 ]; then \
-	        echo "SAME"; \
-	else \
-	        echo "NOT SAME"; \
-	fi
+	@diff -u $(FILE1) $(FILE2) && echo "No Differences found."|| echo "Differences found. Please check the output."

@@ -14,4 +14,4 @@ run:
 	./$(TARGET) > $(FILE1)
 
 resposta:
-	@diff -u $(FILE1) $(FILE2) || echo "Differences found. Please check the output."
+	@diff -u $(FILE1) $(FILE2) && echo "No Differences found."|| echo "Differences found. Please check the output."
