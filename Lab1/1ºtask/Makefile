@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS=-Wall -Wextra
 TARGET=SimpleProgram
 FILE1 = SimpleProgram.txt
-FILE2 = /home/francisco/OC/Lab1/tests/results_L1.txt
+FILE2 = results_L1.txt
 
 all:
 	$(CC) $(CFLAGS) SimpleProgram.c L1Cache.c -o $(TARGET)
