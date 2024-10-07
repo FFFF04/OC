@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ARRAY_SIZE=`cat cm1.out | cut -f1 | cut -d"=" -f2 |sort -gu`
 STRIDE_LIST=`cat cm1.out | cut -f2 | cut -d"=" -f2 |sort -gu`

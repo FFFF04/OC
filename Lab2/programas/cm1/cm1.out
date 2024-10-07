@@ -1,17 +1,3 @@
-#!/usr/bin/gnuplot
-
-set terminal
-show terminal
-set logscale x 2;
-plot "cm1_plot.dat" using 1:2 with lines title "8kB",  \
-     "cm1_plot.dat" using 1:3 with lines title "16kB", \
-     "cm1_plot.dat" using 1:4 with lines title "32kB", \
-     "cm1_plot.dat" using 1:5 with lines title "64kB";
-
-pause mouse
-
-
-
 cache_size=8192 stride=1        avg_misses=0.000247     avg_time=0.002853
 cache_size=8192 stride=2        avg_misses=0.000147     avg_time=0.003089
 cache_size=8192 stride=4        avg_misses=0.000068     avg_time=0.003063
@@ -25,7 +11,6 @@ cache_size=8192 stride=512      avg_misses=0.000010     avg_time=0.001996
 cache_size=8192 stride=1024     avg_misses=0.000009     avg_time=0.001949
 cache_size=8192 stride=2048     avg_misses=0.000009     avg_time=0.002023
 cache_size=8192 stride=4096     avg_misses=0.000009     avg_time=0.002078
-
 cache_size=16384        stride=1        avg_misses=0.000230     avg_time=0.002226
 cache_size=16384        stride=2        avg_misses=0.000217     avg_time=0.002205
 cache_size=16384        stride=4        avg_misses=0.000182     avg_time=0.002192
@@ -40,7 +25,6 @@ cache_size=16384        stride=1024     avg_misses=0.000008     avg_time=0.00193
 cache_size=16384        stride=2048     avg_misses=0.000005     avg_time=0.002041
 cache_size=16384        stride=4096     avg_misses=0.000005     avg_time=0.002139
 cache_size=16384        stride=8192     avg_misses=0.000004     avg_time=0.002025
-
 cache_size=32768        stride=1        avg_misses=0.002177     avg_time=0.002166
 cache_size=32768        stride=2        avg_misses=0.003135     avg_time=0.002159
 cache_size=32768        stride=4        avg_misses=0.005031     avg_time=0.002124
@@ -56,7 +40,6 @@ cache_size=32768        stride=2048     avg_misses=0.000030     avg_time=0.00200
 cache_size=32768        stride=4096     avg_misses=0.000021     avg_time=0.002144
 cache_size=32768        stride=8192     avg_misses=0.000004     avg_time=0.002128
 cache_size=32768        stride=16384    avg_misses=0.000003     avg_time=0.002036
-
 cache_size=65536        stride=1        avg_misses=0.015657     avg_time=0.001958
 cache_size=65536        stride=2        avg_misses=0.031310     avg_time=0.001865
 cache_size=65536        stride=4        avg_misses=0.062675     avg_time=0.002109
