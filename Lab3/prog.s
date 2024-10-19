@@ -19,16 +19,19 @@ C:          .word 0,0,0,0
             daddi $3, $zero, B
             daddi $4, $zero, C
 
-loop:       lw $10, 0($2)
+loop:        lw $10, 0($2)
             lw $11, 0($3)
-            dmul $12, $10, $11 
-            dadd $12, $12, $10
-            sw $12, 0($4)
+
+            dmul $12, $10, $11
 
             daddi $1, $1, 1
             daddi $2, $2, 8
-            daddi $3, $3, 8
-            daddi $4, $4, 8
-            bne $1, $5, loop
+		    daddi $3, $3, 8
+		    daddi $4, $4, 8
 
-            halt
+            dadd $12, $12, $10
+            sw $12, 0($4)
+            
+		    bne $1, $5, loop
+		    halt
+
