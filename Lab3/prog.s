@@ -23,15 +23,22 @@ loop:        lw $10, 0($2)
             lw $11, 0($3)
 
             dmul $12, $10, $11
+            lw $10, 8($2)
+            lw $11, 8($3)
 
-            daddi $1, $1, 1
-            daddi $2, $2, 8
-		    daddi $3, $3, 8
-		    daddi $4, $4, 8
+            dmul $12, $10, $11
+
+            daddi $1, $1, 2
+            daddi $2, $2, 16
+            daddi $3, $3, 16
+            daddi $4, $4, 16
 
             dadd $12, $12, $10
-            sw $12, 0($4)
-            
-		    bne $1, $5, loop
-		    halt
+            sw $12, -16($4)
+
+            dadd $12, $12, $10
+            sw $12, -8($4)
+
+            bne $1, $5, loop
+            halt
 
