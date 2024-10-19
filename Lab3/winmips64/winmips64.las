@@ -1,1 +1,1 @@
-E:\Tecnico\OCLab3\progs\prog.s
+Z:\home\francisco\OC\Lab3\prog.s
